@@ -390,3 +390,41 @@ button:hover{
     }
 
 }
+
+.checkMark{
+
+    width:25px;
+
+    font-size:22px;
+
+    text-align:center;
+
+}
+
+.pieceColor{
+
+    width:24px;
+
+    height:24px;
+
+    border-radius:5px;
+
+    border:1px solid rgba(255,255,255,.3);
+
+}
+
+.pieceName{
+
+    flex:1;
+
+    font-weight:bold;
+
+}
+
+.pieceCard.owned{
+
+    border:2px solid gold;
+
+    background:#58627a;
+
+}
