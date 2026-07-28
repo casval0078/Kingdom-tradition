@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>伝承シミュレーター</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 左：盤面 -->
+    <div class="board-area">
+
+        <h2>伝承盤面</h2>
+
+        <div id="board" class="board"></div>
+
+        <div class="board-buttons">
+            <button id="clearBoard">盤面クリア</button>
+            <button id="searchBtn">探索開始</button>
+        </div>
+
+    </div>
+
+    <!-- 右：宝物 -->
+    <div class="piece-area">
+
+        <h2>所持宝物</h2>
+
+        <div id="pieceList"></div>
+
+    </div>
+
+</div>
+
+
+<hr>
+
+<div class="result-header">
+
+    <h2>探索結果</h2>
+
+    <div id="resultCount">
+        0件
+    </div>
+
+</div>
+
+<div id="resultArea" class="resultArea">
+</div>
+
+<script src="pieces.js"></script>
+<script src="solver.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
