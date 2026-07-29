@@ -2,55 +2,151 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>伝承シミュレーター</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キングダム覇道 伝承パズルソルバー</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
 
-    <!-- 左：盤面 -->
-    <div class="board-area">
+    <!--========================
+            左側
+    =========================-->
+
+    <section class="leftPanel">
 
         <h2>伝承盤面</h2>
 
+        <p class="description">
+            マスをクリックして「使用不可マス」を設定
+        </p>
+
         <div id="board" class="board"></div>
 
-        <div class="board-buttons">
-            <button id="clearBoard">盤面クリア</button>
-            <button id="searchBtn">探索開始</button>
+        <div class="boardButtons">
+
+            <button id="clearBoard">
+                盤面クリア
+            </button>
+
+            <button id="searchBtn">
+                探索開始
+            </button>
+
         </div>
 
-    </div>
+    </section>
 
-    <!-- 右：宝物 -->
-    <div class="piece-area">
+    <!--========================
+            右側
+    =========================-->
 
-        <h2>所持宝物</h2>
+    <section class="rightPanel">
 
-        <div id="pieceList"></div>
+        <h2>条件設定</h2>
 
-    </div>
+        <div class="conditionBox">
+
+            <div class="conditionRow">
+
+                <label>Aランク（L型）以上</label>
+
+                <input
+                    id="needA"
+                    type="number"
+                    min="0"
+                    max="20"
+                    value="0">
+
+            </div>
+
+            <div class="conditionRow">
+
+                <label>Bランク（Z型）以上</label>
+
+                <input
+                    id="needB"
+                    type="number"
+                    min="0"
+                    max="20"
+                    value="0">
+
+            </div>
+
+            <div class="conditionRow">
+
+                <label>Cランク（T型）以上</label>
+
+                <input
+                    id="needC"
+                    type="number"
+                    min="0"
+                    max="20"
+                    value="0">
+
+            </div>
+
+        </div>
+
+        <hr>
+
+        <h2>探索結果</h2>
+
+        <div id="resultCount">
+
+            0件
+
+        </div>
+
+        <div class="sortBox">
+
+            <label>並び順</label>
+
+            <select id="sortType">
+
+                <option value="default">
+                    発見順
+                </option>
+
+                <option value="A">
+                    Aランクが多い順
+                </option>
+
+                <option value="B">
+                    Bランクが多い順
+                </option>
+
+                <option value="C">
+                    Cランクが多い順
+                </option>
+
+            </select>
+
+        </div>
+
+    </section>
 
 </div>
 
-
-<hr>
-
-<div class="result-header">
-
-    <h2>探索結果</h2>
-
-    <div id="resultCount">
-        0件
-    </div>
-
-</div>
+<!--========================
+        結果一覧
+=========================-->
 
 <div id="resultArea" class="resultArea">
+
 </div>
 
-<script src="pieces.js"></script>
+<!--========================
+        ページ送り
+=========================-->
+
+<div id="pagination" class="pagination">
+
+</div>
+
+<script src="shapes.js"></script>
 <script src="solver.js"></script>
 <script src="app.js"></script>
 
