@@ -485,3 +485,246 @@ function loadBoardFromURL(){
     }
 
 }
+
+function createResultCard(solution,no){
+
+    const card=document.createElement("div");
+    card.className="resultCard";
+
+    //--------------------------------
+    // タイトル
+    //--------------------------------
+
+    const title=document.createElement("div");
+    title.className="cardTitle";
+    title.textContent="No."+no;
+
+    card.appendChild(title);
+
+    //--------------------------------
+    // ミニ盤面
+    //--------------------------------
+
+    card.appendChild(
+        createMiniBoard(solution)
+    );
+
+    //--------------------------------
+    // ランク数
+    //--------------------------------
+
+    const rank=document.createElement("div");
+    rank.className="rankInfo";
+
+    rank.innerHTML=
+        "A："+solution.countA+
+        "　B："+solution.countB+
+        "　C："+solution.countC;
+
+    card.appendChild(rank);
+
+    //--------------------------------
+    // 使用形状
+    //--------------------------------
+
+    const shape=document.createElement("div");
+    shape.className="shapeInfo";
+
+    shape.textContent=
+        solution.usedShapes.join("  ");
+
+    card.appendChild(shape);
+
+    return card;
+
+}
+
+function createMiniBoard(solution){
+
+    const boardDiv=document.createElement("div");
+
+    boardDiv.className="miniBoard";
+
+    //--------------------------------
+
+    const grid=[];
+
+    for(let y=0;y<BOARD_SIZE;y++){
+
+        grid[y]=[];
+
+        for(let x=0;x<BOARD_SIZE;x++){
+
+            grid[y][x]=0;
+
+        }
+
+    }
+
+    //--------------------------------
+
+    solution.pieces.forEach((piece,index)=>{
+
+        const color=index+2;
+
+        piece.cells.forEach(c=>{
+
+            const x=piece.x+c[0];
+
+            const y=piece.y+c[1];
+
+            grid[y][x]=color;
+
+        });
+
+    });
+
+    //--------------------------------
+
+    for(let y=0;y<BOARD_SIZE;y++){
+
+        for(let x=0;x<BOARD_SIZE;x++){
+
+            const cell=document.createElement("div");
+
+            cell.className="miniCell";
+
+            if(board[y][x]==1){
+
+                cell.classList.add("wall");
+
+            }
+
+            else{
+
+                cell.style.background=
+                    getPieceColor(grid[y][x]);
+
+            }
+
+            boardDiv.appendChild(cell);
+
+        }
+
+    }
+
+    return boardDiv;
+
+}
+
+function getPieceColor(no){
+
+    const colors=[
+
+        "#f8fafc",
+
+        "#111827",
+
+        "#60a5fa",
+
+        "#34d399",
+
+        "#fbbf24",
+
+        "#f87171",
+
+        "#c084fc",
+
+        "#fb923c",
+
+        "#2dd4bf",
+
+        "#ec4899",
+
+        "#a3e635",
+
+        "#818cf8",
+
+        "#facc15"
+
+    ];
+
+    return colors[no%colors.length];
+
+}
+
+function drawPagination(){
+
+    const div=
+        document.getElementById(
+            "pagination"
+        );
+
+    div.innerHTML="";
+
+    const pageCount=
+        Math.ceil(
+            filteredSolutions.length/
+            PAGE_SIZE
+        );
+
+    if(pageCount<=1)return;
+
+    //--------------------------------
+
+    const prev=document.createElement("button");
+
+    prev.textContent="◀";
+
+    prev.disabled=currentPage==1;
+
+    prev.onclick=()=>{
+
+        currentPage--;
+
+        renderSolutions();
+
+    };
+
+    div.appendChild(prev);
+
+    //--------------------------------
+
+    for(let i=1;i<=pageCount;i++){
+
+        const btn=document.createElement("button");
+
+        btn.textContent=i;
+
+        if(i==currentPage){
+
+            btn.classList.add("active");
+
+        }
+
+        btn.onclick=()=>{
+
+            currentPage=i;
+
+            renderSolutions();
+
+        };
+
+        div.appendChild(btn);
+
+    }
+
+    //--------------------------------
+
+    const next=document.createElement("button");
+
+    next.textContent="▶";
+
+    next.disabled=currentPage==pageCount;
+
+    next.onclick=()=>{
+
+        currentPage++;
+
+        renderSolutions();
+
+    };
+
+    div.appendChild(next);
+
+}
