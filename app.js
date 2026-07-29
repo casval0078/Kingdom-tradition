@@ -172,6 +172,4 @@ function startSearch(){
 
 console.log(result);
 
-alert(result.length+"パターン見つかりました");
-
 }
