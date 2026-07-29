@@ -49,47 +49,58 @@
 
         <div class="conditionBox">
 
-            <div class="conditionRow">
+    <!-- Aランク -->
+    <div class="conditionRow">
 
-                <label>Aランク（L型）以上</label>
+        <label>Aランク（L型）以上</label>
 
-                <input
-                    id="needA"
-                    type="number"
-                    min="0"
-                    max="20"
-                    value="0">
+        <div class="counter">
 
-            </div>
+            <button id="minusA" class="counterBtn">－</button>
 
-            <div class="conditionRow">
+            <span id="needA" class="counterValue">0</span>
 
-                <label>Bランク（Z型）以上</label>
-
-                <input
-                    id="needB"
-                    type="number"
-                    min="0"
-                    max="20"
-                    value="0">
-
-            </div>
-
-            <div class="conditionRow">
-
-                <label>Cランク（T型）以上</label>
-
-                <input
-                    id="needC"
-                    type="number"
-                    min="0"
-                    max="20"
-                    value="0">
-
-            </div>
+            <button id="plusA" class="counterBtn">＋</button>
 
         </div>
 
+    </div>
+
+    <!-- Bランク -->
+    <div class="conditionRow">
+
+        <label>Bランク（Z型）以上</label>
+
+        <div class="counter">
+
+            <button id="minusB" class="counterBtn">－</button>
+
+            <span id="needB" class="counterValue">0</span>
+
+            <button id="plusB" class="counterBtn">＋</button>
+
+        </div>
+
+    </div>
+
+    <!-- Cランク -->
+    <div class="conditionRow">
+
+        <label>Cランク（T型）以上</label>
+
+        <div class="counter">
+
+            <button id="minusC" class="counterBtn">－</button>
+
+            <span id="needC" class="counterValue">0</span>
+
+            <button id="plusC" class="counterBtn">＋</button>
+
+        </div>
+
+    </div>
+
+</div>
         <hr>
 
         <h2>探索結果</h2>
