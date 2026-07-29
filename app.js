@@ -168,6 +168,10 @@ function startSearch(){
 
     console.log([...ownedPieces]);
 
-    alert("solver.jsで探索開始");
+    const result = solve();
+
+console.log(result);
+
+alert(result.length+"パターン見つかりました");
 
 }
