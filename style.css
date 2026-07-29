@@ -494,3 +494,105 @@ button:hover{
     font-weight:bold;
 
 }
+
+.resultCard{
+
+    background:#1f2937;
+
+    border-radius:12px;
+
+    padding:12px;
+
+    color:white;
+
+}
+
+.cardTitle{
+
+    font-weight:bold;
+
+    margin-bottom:8px;
+
+}
+
+.rankInfo{
+
+    margin-top:8px;
+
+    font-weight:bold;
+
+}
+
+.shapeInfo{
+
+    margin-top:6px;
+
+    font-size:13px;
+
+    color:#ddd;
+
+}
+
+.miniBoard{
+
+    display:grid;
+
+    grid-template-columns:repeat(5,24px);
+
+    gap:2px;
+
+    margin:auto;
+
+    width:max-content;
+
+}
+
+.miniCell{
+
+    width:24px;
+
+    height:24px;
+
+    border-radius:3px;
+
+}
+
+.wall{
+
+    background:#222 !important;
+
+}
+
+.pagination{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:8px;
+
+    margin-top:20px;
+
+}
+
+.pagination button{
+
+    width:36px;
+
+    height:36px;
+
+    border:none;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+
+.pagination button.active{
+
+    background:#2563eb;
+
+    color:white;
+
+}
