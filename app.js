@@ -1,18 +1,38 @@
+//============================
+// 定数
+//============================
+
 const BOARD_SIZE = 5;
 
+//============================
+// 状態
+//============================
+
 let board = [];
-let ownedPieces = new Set();
 
-const boardDiv = document.getElementById("board");
-const pieceList = document.getElementById("pieceList");
+let allSolutions = [];
 
-init();
+let filteredSolutions = [];
 
-function init(){
+let currentPage = 1;
+
+const PAGE_SIZE = 10;
+
+//============================
+// 起動
+//============================
+
+window.onload = () => {
 
     createBoard();
 
-    createPieceList();
+    initConditionButtons();
+
+    bindButtons();
+
+};
+
+function bindButtons(){
 
     document
         .getElementById("clearBoard")
@@ -22,13 +42,16 @@ function init(){
         .getElementById("searchBtn")
         .onclick = startSearch;
 
+    document
+        .getElementById("sortType")
+        .onchange = filterSolutions;
+
 }
 
-/////////////////////////////////////////////////////
-// 盤面生成
-/////////////////////////////////////////////////////
-
 function createBoard(){
+
+    const boardDiv =
+        document.getElementById("board");
 
     boardDiv.innerHTML="";
 
@@ -42,7 +65,8 @@ function createBoard(){
 
             board[y][x]=0;
 
-            const cell=document.createElement("div");
+            const cell =
+                document.createElement("div");
 
             cell.className="cell";
 
@@ -50,7 +74,11 @@ function createBoard(){
 
             cell.dataset.y=y;
 
-            cell.onclick=()=>toggleCell(x,y,cell);
+            cell.onclick=()=>{
+
+                toggleCell(x,y,cell);
+
+            };
 
             boardDiv.appendChild(cell);
 
@@ -60,116 +88,137 @@ function createBoard(){
 
 }
 
-/////////////////////////////////////////////////////
-// 使用不可切替
-/////////////////////////////////////////////////////
-
 function toggleCell(x,y,cell){
 
-    board[y][x]=board[y][x]?0:1;
+    board[y][x] =
+        board[y][x] ? 0 : 1;
 
     cell.classList.toggle("block");
 
 }
 
-/////////////////////////////////////////////////////
-// 盤面クリア
-/////////////////////////////////////////////////////
-
 function clearBoard(){
 
     createBoard();
 
+    allSolutions=[];
+
+    filteredSolutions=[];
+
+    currentPage=1;
+
+    updateResultCount();
+
+    document
+        .getElementById("resultArea")
+        .innerHTML="";
+
+    document
+        .getElementById("pagination")
+        .innerHTML="";
+
 }
 
-/////////////////////////////////////////////////////
-// 宝物一覧
-/////////////////////////////////////////////////////
+function initConditionButtons(){
 
-function createPieceList(){
+    initCounter("A");
 
-    pieceList.innerHTML="";
+    initCounter("B");
 
-    pieces.forEach(piece=>{
+    initCounter("C");
 
-        const card=document.createElement("div");
+}
 
-        card.className="pieceCard";
+function initCounter(rank){
 
-        card.dataset.id=piece.id;
+    const span =
+        document.getElementById(
+            "need"+rank
+        );
 
-        const check=document.createElement("div");
+    let value=0;
 
-        check.className="checkMark";
+    document
+        .getElementById(
+            "plus"+rank
+        )
+        .onclick=()=>{
 
-        check.innerHTML="☐";
+            value++;
 
-        const icon=document.createElement("div");
+            span.innerText=value;
 
-        icon.className="pieceColor";
-
-        icon.style.background=piece.color;
-
-        const name=document.createElement("div");
-
-        name.className="pieceName";
-
-        name.innerText=piece.name;
-
-        card.appendChild(check);
-
-        card.appendChild(icon);
-
-        card.appendChild(name);
-
-        card.onclick=()=>{
-
-            if(ownedPieces.has(piece.id)){
-
-                ownedPieces.delete(piece.id);
-
-                check.innerHTML="☐";
-
-                card.classList.remove("owned");
-
-            }else{
-
-                ownedPieces.add(piece.id);
-
-                check.innerHTML="☑";
-
-                card.classList.add("owned");
-
-            }
+            filterSolutions();
 
         };
 
-        pieceList.appendChild(card);
+    document
+        .getElementById(
+            "minus"+rank
+        )
+        .onclick=()=>{
 
-    });
+            if(value==0)return;
+
+            value--;
+
+            span.innerText=value;
+
+            filterSolutions();
+
+        };
 
 }
 
-/////////////////////////////////////////////////////
-// 探索開始
-/////////////////////////////////////////////////////
-
 function startSearch(){
 
-    if(ownedPieces.size==0){
+    const usable =
+        countUsableCells();
 
-        alert("所持宝物を選択してください。");
+    if(usable%4!==0){
+
+        alert(
+            "使用可能マスが4の倍数ではありません"
+        );
 
         return;
 
     }
 
-    console.log(board);
+    allSolutions = solve(board);
 
-    console.log([...ownedPieces]);
+    filterSolutions();
 
-    const result = solve();
+}
 
-console.log(result);
+function countUsableCells(){
+
+    let count=0;
+
+    for(let y=0;y<5;y++){
+
+        for(let x=0;x<5;x++){
+
+            if(board[y][x]==0){
+
+                count++;
+
+            }
+
+        }
+
+    }
+
+    return count;
+
+}
+
+function updateResultCount(){
+
+    document
+        .getElementById("resultCount")
+        .innerText =
+        filteredSolutions.length
+        +"件";
 
 }
