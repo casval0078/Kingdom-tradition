@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+html<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>5x5 パズルステージ作成 & 解答抽出ツール</title>
+    <title>キングダム覇道　伝承最適化ツール</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 20px; color: #333; }
         h1 { margin-bottom: 5px; }
@@ -11,9 +11,9 @@
         .description { font-size: 14px; color: #666; margin-bottom: 20px; }
         /* 5x5盤面スタイル */
         .board { display: grid; grid-template-columns: repeat(5, 50px); grid-gap: 5px; justify-content: center; margin-bottom: 20px; }
-        .cell { width: 50px; height: 50px; background-color: #e0e0e0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; user-select: none; transition: background 0.2s; }
+        .cell { width: 50px; height: 50px; background-color: #ffffff; border: 1px solid #333; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; user-select: none; transition: background 0.2s; }
         .cell.active { background-color: #ffffff; border-color: #333; } /* 置けるマス */
-        .cell.block { background-color: #333333; color: white; } /* 障害物マス */
+        .cell.block { background-color: #333333; color: white; border-color: #ccc; } /* 障害物マス */
         /* カウンタ表示 */
         .info { margin-bottom: 15px; font-weight: bold; }
         .info span { color: #007bff; }
@@ -33,14 +33,13 @@
 <body>
 
 <div class="container">
-    <h1>5x5 パズルステージアナライザー</h1>
+    <h1>キングダム覇道　伝承最適化ツール</h1>
     <div class="description">
-        マスをクリックして「置けるマス(白)」と「障害物(黒)」を切り替えます。<br>
-        白マスが 8, 12, 16, 20 マスのいずれかになったら「解析開始」を押してください。<br>
-        ※指定の12種類を回転・反転させずに、重複使用を許可して探索します。
+        マスをクリックして「障害物(黒)」を指定します（初期はすべて置ける白マスです）。<br>
+        残った白マスが 8, 12, 16, 20 マスのいずれかになったら「解析開始」を押してください。<br>
     </div>
 
-    <div class="info">現在の置けるマス数: <span id="active-count">0</span> / 25</div>
+    <div class="info">現在の置けるマス数: <span id="active-count">25</span> / 25</div>
 
     <div class="board" id="main-board"></div>
 
@@ -73,16 +72,13 @@ const FIXED_PIECES = {
     'Z4': [[0,0], [1,0], [1,1], [2,1]]  // S（縦）
 };
 
-// 視認性を良くするため、系統ごとに色を統一（T=紫系、L=橙系、Z=緑系）
-const PIECE_COLORS = {
-    'T1': '#8e44ad', 'T2': '#9b59b6', 'T3': '#a55eea', 'T4': '#d6a2e8',
-    'L1': '#d35400', 'L2': '#e67e22', 'L3': '#f39c12', 'L4': '#f1c40f',
-    'Z1': '#27ae60', 'Z2': '#2ecc71', 'Z3': '#16a085', 'Z4': '#1abc9c',
-    '.': '#333333'
-};
+// 塗り分け用の美しいパステルカラー4色
+const VISUAL_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f'];
+const OBSTACLE_COLOR = '#333333';
 
 // --- 2. 画面（盤面）の初期化設定 ---
-const boardState = Array(25).fill(false); // false = 障害物, true = 置けるマス
+// 【修正】初期状態をすべて「true (置ける白マス)」に変更
+const boardState = Array(25).fill(true); 
 const mainBoard = document.getElementById('main-board');
 const activeCountEl = document.getElementById('active-count');
 
@@ -90,7 +86,7 @@ function createBoard() {
     mainBoard.innerHTML = '';
     for (let i = 0; i < 25; i++) {
         const cell = document.createElement('div');
-        cell.classList.add('cell', 'block'); // 初期はすべて障害物
+        cell.classList.add('cell', 'active'); // 初期はすべて白マス
         cell.dataset.index = i;
         cell.addEventListener('click', () => {
             boardState[i] = !boardState[i];
@@ -114,13 +110,11 @@ function solvePuzzle() {
     solutions = [];
     const activeCount = boardState.filter(Boolean).length;
     
-    // バリデーション
-    if (![8, 12, 16, 20].includes(activeCount)) {
+    if (!.includes(activeCount)) {
         alert("置けるマス（白マス）の数を 8, 12, 16, 20マスのいずれかにしてください！");
         return;
     }
     
-    // 探索用盤面の作成（'X'=障害物, '.'=未配置の白マス）
     const searchBoard = [];
     for (let r = 0; r < 5; r++) {
         searchBoard.push([]);
@@ -129,9 +123,7 @@ function solvePuzzle() {
         }
     }
 
-    // 再帰探索関数（重複使用可能のため、使用済みリストの保持は不要）
-    function backtrack() {
-        // まだ埋まっていない最も左上の空きマスを探す
+    function backtrack(blockId = 1) {
         let startR = -1, startC = -1;
         for (let r = 0; r < 5; r++) {
             for (let c = 0; c < 5; c++) {
@@ -143,17 +135,14 @@ function solvePuzzle() {
             if (startR !== -1) break;
         }
 
-        // すべての白マスが埋まったら成功、解として記録
         if (startR === -1) {
             solutions.push(searchBoard.map(row => [...row]));
             return;
         }
 
-        // 固定された12種類のブロックをそのまま試す
         for (const [name, pattern] of Object.entries(FIXED_PIECES)) {
-            // パターンの1番目のマス(pattern[0])が、見つかった空きマス(startR, startC)に重なるように配置
-            const offsetR = startR - pattern[0][0];
-            const offsetC = startC - pattern[0][1];
+            const offsetR = startR - pattern;
+            const offsetC = startC - pattern;
 
             let canPlace = true;
             const placedPositions = [];
@@ -162,7 +151,6 @@ function solvePuzzle() {
                 const br = pr + offsetR;
                 const bc = pc + offsetC;
 
-                // 盤面内かつ空きマスであるか確認
                 if (br >= 0 && br < 5 && bc >= 0 && bc < 5 && searchBoard[br][bc] === '.') {
                     placedPositions.push([br, bc]);
                 } else {
@@ -172,13 +160,13 @@ function solvePuzzle() {
             }
 
             if (canPlace) {
-                // ブロックを配置
-                for (const [br, bc] of placedPositions) searchBoard[br][bc] = name;
+                // 【修正】色の重複を判定するため、ブロック名ではなく「固有の識別文字列」を書き込む
+                // 例: "T1_1", "T1_2" などにすることで、別々の塊として区別できるようにする
+                const idString = `${name}_${blockId}`;
+                for (const [br, bc] of placedPositions) searchBoard[br][bc] = idString;
 
-                // 次の空きマスへ進む（再帰）
-                backtrack();
+                backtrack(blockId + 1);
 
-                // バックトラック（配置を元に戻して次のブロックを試す）
                 for (const [br, bc] of placedPositions) searchBoard[br][bc] = '.';
             }
         }
@@ -188,7 +176,60 @@ function solvePuzzle() {
     renderResults();
 }
 
-// --- 4. 結果の描画表示 ---
+// --- 4. 隣接ブロックの色被りを防ぐグラフ彩色アルゴリズム ---
+function colorSolution(sol) {
+    const colorMap = {}; // 各ブロックID（"T1_1"等）に対応するカラーインデックス(0~3)
+    const blockIds = new Set();
+    
+    for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+            if (sol[r][c] !== 'X') blockIds.add(sol[r][c]);
+        }
+    }
+
+    // 各ブロックについて、隣接するブロックを調べる（隣接リスト）
+    const adj = {};
+    blockIds.forEach(id => adj[id] = new Set());
+
+    for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+            const current = sol[r][c];
+            if (current === 'X') continue;
+            
+            // 下と右のマスをチェック
+            const neighbors = [[r+1, c], [r, c+1]];
+            for (const [nr, nc] of neighbors) {
+                if (nr < 5 && nc < 5) {
+                    const next = sol[nr][nc];
+                    if (next !== 'X' && next !== current) {
+                        adj[current].add(next);
+                        adj[next].add(current);
+                    }
+                }
+            }
+        }
+    }
+
+    // 隣接するブロックと被らないように4色から貪欲に割り当て
+    blockIds.forEach(id => {
+        const usedColors = new Set();
+        adj[id].forEach(neighbor => {
+            if (colorMap[neighbor] !== undefined) {
+                usedColors.add(colorMap[neighbor]);
+            }
+        });
+        
+        let color = 0;
+        while (usedColors.has(color)) {
+            color++;
+        }
+        colorMap[id] = color;
+    });
+
+    return colorMap;
+}
+
+// --- 5. 結果の描画表示 ---
 function renderResults() {
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = '';
@@ -201,11 +242,13 @@ function renderResults() {
     const gridList = document.createElement('div');
     gridList.classList.add('grid-list');
 
-    // 大量の結果でブラウザがフリーズするのを防ぐため、最大300件まで表示
     const displayLimit = Math.min(solutions.length, 300);
     
     for (let i = 0; i < displayLimit; i++) {
         const sol = solutions[i];
+        // 隣接するブロックが別々の色になるようマップを生成
+        const colorMap = colorSolution(sol);
+
         const miniBoard = document.createElement('div');
         miniBoard.classList.add('mini-board');
 
@@ -214,9 +257,17 @@ function renderResults() {
                 const cellVal = sol[r][c];
                 const miniCell = document.createElement('div');
                 miniCell.classList.add('mini-cell');
-                miniCell.style.backgroundColor = PIECE_COLORS[cellVal] || '#333';
-                // 障害物以外はブロック名を表示（文字が見づらければ空欄にしてもOK）
-                miniCell.textContent = cellVal === 'X' ? '' : cellVal;
+                
+                if (cellVal === 'X') {
+                    miniCell.style.backgroundColor = OBSTACLE_COLOR;
+                    miniCell.textContent = '';
+                } else {
+                    // 自動計算されたカラーインデックスを適用
+                    const colorIdx = colorMap[cellVal];
+                    miniCell.style.backgroundColor = VISUAL_COLORS[colorIdx % VISUAL_COLORS.length];
+                    // "T1_1" から元のブロック名 "T1" だけを取り出して表示
+                    miniCell.textContent = cellVal.split('_')[0];
+                }
                 miniBoard.appendChild(miniCell);
             }
         }
@@ -238,7 +289,7 @@ function renderResults() {
 // イベントリスナー
 document.getElementById('solve-btn').addEventListener('click', solvePuzzle);
 document.getElementById('reset-btn').addEventListener('click', () => {
-    boardState.fill(false);
+    boardState.fill(true); // 【修正】リセット時もすべて白マスに
     createBoard();
     updateCount();
     document.getElementById('results').innerHTML = '';
