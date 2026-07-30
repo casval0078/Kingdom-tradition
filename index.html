@@ -77,7 +77,6 @@ const VISUAL_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f'];
 const OBSTACLE_COLOR = '#333333';
 
 // --- 2. 画面（盤面）の初期化設定 ---
-// 【修正】初期状態をすべて「true (置ける白マス)」に変更
 const boardState = Array(25).fill(true); 
 const mainBoard = document.getElementById('main-board');
 const activeCountEl = document.getElementById('active-count');
@@ -86,7 +85,7 @@ function createBoard() {
     mainBoard.innerHTML = '';
     for (let i = 0; i < 25; i++) {
         const cell = document.createElement('div');
-        cell.classList.add('cell', 'active'); // 初期はすべて白マス
+        cell.classList.add('cell', 'active'); 
         cell.dataset.index = i;
         cell.addEventListener('click', () => {
             boardState[i] = !boardState[i];
@@ -110,6 +109,7 @@ function solvePuzzle() {
     solutions = [];
     const activeCount = boardState.filter(Boolean).length;
     
+    // 【修正箇所】配列が抜けていた部分を [8, 12, 16, 20] に修正
     if (![8, 12, 16, 20].includes(activeCount)) {
         alert("置けるマス（白マス）の数を 8, 12, 16, 20マスのいずれかにしてください！");
         return;
@@ -141,8 +141,8 @@ function solvePuzzle() {
         }
 
         for (const [name, pattern] of Object.entries(FIXED_PIECES)) {
-            const offsetR = startR - pattern;
-            const offsetC = startC - pattern;
+            const offsetR = startR - pattern[0][0];
+            const offsetC = startC - pattern[0][1];
 
             let canPlace = true;
             const placedPositions = [];
@@ -160,8 +160,6 @@ function solvePuzzle() {
             }
 
             if (canPlace) {
-                // 【修正】色の重複を判定するため、ブロック名ではなく「固有の識別文字列」を書き込む
-                // 例: "T1_1", "T1_2" などにすることで、別々の塊として区別できるようにする
                 const idString = `${name}_${blockId}`;
                 for (const [br, bc] of placedPositions) searchBoard[br][bc] = idString;
 
@@ -178,7 +176,7 @@ function solvePuzzle() {
 
 // --- 4. 隣接ブロックの色被りを防ぐグラフ彩色アルゴリズム ---
 function colorSolution(sol) {
-    const colorMap = {}; // 各ブロックID（"T1_1"等）に対応するカラーインデックス(0~3)
+    const colorMap = {}; 
     const blockIds = new Set();
     
     for (let r = 0; r < 5; r++) {
@@ -187,7 +185,6 @@ function colorSolution(sol) {
         }
     }
 
-    // 各ブロックについて、隣接するブロックを調べる（隣接リスト）
     const adj = {};
     blockIds.forEach(id => adj[id] = new Set());
 
@@ -196,7 +193,6 @@ function colorSolution(sol) {
             const current = sol[r][c];
             if (current === 'X') continue;
             
-            // 下と右のマスをチェック
             const neighbors = [[r+1, c], [r, c+1]];
             for (const [nr, nc] of neighbors) {
                 if (nr < 5 && nc < 5) {
@@ -210,7 +206,6 @@ function colorSolution(sol) {
         }
     }
 
-    // 隣接するブロックと被らないように4色から貪欲に割り当て
     blockIds.forEach(id => {
         const usedColors = new Set();
         adj[id].forEach(neighbor => {
@@ -246,7 +241,6 @@ function renderResults() {
     
     for (let i = 0; i < displayLimit; i++) {
         const sol = solutions[i];
-        // 隣接するブロックが別々の色になるようマップを生成
         const colorMap = colorSolution(sol);
 
         const miniBoard = document.createElement('div');
@@ -262,10 +256,8 @@ function renderResults() {
                     miniCell.style.backgroundColor = OBSTACLE_COLOR;
                     miniCell.textContent = '';
                 } else {
-                    // 自動計算されたカラーインデックスを適用
                     const colorIdx = colorMap[cellVal];
                     miniCell.style.backgroundColor = VISUAL_COLORS[colorIdx % VISUAL_COLORS.length];
-                    // "T1_1" から元のブロック名 "T1" だけを取り出して表示
                     miniCell.textContent = cellVal.split('_')[0];
                 }
                 miniBoard.appendChild(miniCell);
@@ -289,7 +281,7 @@ function renderResults() {
 // イベントリスナー
 document.getElementById('solve-btn').addEventListener('click', solvePuzzle);
 document.getElementById('reset-btn').addEventListener('click', () => {
-    boardState.fill(true); // 【修正】リセット時もすべて白マスに
+    boardState.fill(true); 
     createBoard();
     updateCount();
     document.getElementById('results').innerHTML = '';
