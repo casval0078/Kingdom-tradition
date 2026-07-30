@@ -1,91 +1,168 @@
+//======================================================
+// solver.js
+//======================================================
+
+const BOARD_SIZE = 5;
+
 let solutions = [];
 
-////////////////////////////////////////////////////
-// 探索開始
-////////////////////////////////////////////////////
+/*
+Placement
 
-function solve(){
-
-    solutions = [];
-
-    const selectedPieces = pieces.filter(p =>
-        ownedPieces.has(p.id)
-    );
-
-    const workBoard = board.map(r=>[...r]);
-
-    backtrack(workBoard, selectedPieces, []);
-
-    return solutions;
-
+{
+    shape,
+    x,
+    y,
+    cells:[
+        {x,y},
+        ...
+    ],
+    rank,
+    id
 }
+*/
 
-////////////////////////////////////////////////////
-// 再帰
-////////////////////////////////////////////////////
+let placements = [];
 
-function backtrack(workBoard, remainPieces, placed){
+//======================================================
+// solve
+//======================================================
 
-    const empty = findFirstEmpty(workBoard);
+function solve(board){
 
-    if(empty == null){
+    placements=[];
 
-        solutions.push(
-            JSON.parse(JSON.stringify(placed))
-        );
+    placementMap=[];
 
-        return;
-    }
+    solutions=[];
 
-    const {x,y} = empty;
+    buildPlacements(board);
 
-    for(let i=0;i<remainPieces.length;i++){
+    buildPlacementMap();
 
-        const piece = remainPieces[i];
+    const work=[];
 
-        if(canPlace(workBoard,piece,x,y)){
+    for(let y=0;y<BOARD_SIZE;y++){
 
-            placePiece(workBoard,piece,x,y,1);
+        work[y]=[];
 
-            placed.push({
+        for(let x=0;x<BOARD_SIZE;x++){
 
-                id:piece.id,
-
-                color:piece.color,
-
-                name:piece.name,
-
-                x,
-
-                y,
-
-                cells:piece.cells
-
-            });
-
-            const next = remainPieces.filter((_,idx)=>idx!==i);
-
-            backtrack(workBoard,next,placed);
-
-            placed.pop();
-
-            placePiece(workBoard,piece,x,y,0);
+            work[y][x]=board[y][x];
 
         }
 
     }
 
+    backtrack(
+
+        work,
+
+        [],
+
+        0
+
+    );
+
+    solutions.forEach((s,i)=>{
+
+        s.index=i+1;
+
+    });
+
+    return solutions;
+
 }
 
-function findFirstEmpty(board){
+//======================================================
+// Placement生成
+//======================================================
 
-    for(let y=0;y<5;y++){
+function buildPlacements(board){
 
-        for(let x=0;x<5;x++){
+    placements=[];
+
+    SHAPES.forEach(shape=>{
+
+        for(let sy=-3;sy<BOARD_SIZE;sy++){
+
+            for(let sx=-3;sx<BOARD_SIZE;sx++){
+
+                const cells=[];
+
+                let ok=true;
+
+                for(const c of shape.cells){
+
+                    const x=sx+c[0];
+                    const y=sy+c[1];
+
+                    if(
+                        x<0||
+                        y<0||
+                        x>=BOARD_SIZE||
+                        y>=BOARD_SIZE
+                    ){
+                        ok=false;
+                        break;
+                    }
+
+                    if(board[y][x]){
+
+                        ok=false;
+                        break;
+
+                    }
+
+                    cells.push({
+                        x,
+                        y
+                    });
+
+                }
+
+                if(!ok)continue;
+
+                placements.push({
+
+                    shape:shape.id,
+
+                    rank:shape.rank,
+
+                    x:sx,
+
+                    y:sy,
+
+                    cells
+
+                });
+
+            }
+
+        }
+
+    });
+
+}
+
+//======================================================
+// 左上の空きを探す
+//======================================================
+
+function firstEmpty(board){
+
+    for(let y=0;y<BOARD_SIZE;y++){
+
+        for(let x=0;x<BOARD_SIZE;x++){
 
             if(board[y][x]==0){
 
-                return {x,y};
+                return{
+
+                    x,
+                    y
+
+                };
 
             }
 
@@ -97,25 +174,53 @@ function findFirstEmpty(board){
 
 }
 
-function canPlace(board,piece,startX,startY){
+//======================================================
+// Placement取得
+//======================================================
 
-    const base = piece.cells[0];
+function placementsAt(x,y){
 
-    const offsetX = startX-base[0];
+    const list=[];
 
-    const offsetY = startY-base[1];
+    for(const p of placements){
 
-    for(const cell of piece.cells){
+        for(const c of p.cells){
 
-        const x = offsetX+cell[0];
+            if(
 
-        const y = offsetY+cell[1];
+                c.x==x &&
 
-        if(x<0 || x>=5) return false;
+                c.y==y
 
-        if(y<0 || y>=5) return false;
+            ){
 
-        if(board[y][x]!=0) return false;
+                list.push(p);
+
+                break;
+
+            }
+
+        }
+
+    }
+
+    return list;
+
+}
+
+//======================================================
+// 置けるか
+//======================================================
+
+function canPlace(board,p){
+
+    for(const c of p.cells){
+
+        if(board[c.y][c.x]){
+
+            return false;
+
+        }
 
     }
 
@@ -123,237 +228,192 @@ function canPlace(board,piece,startX,startY){
 
 }
 
-function placePiece(board,piece,startX,startY,value){
+//======================================================
+// 配置
+//======================================================
 
-    const base = piece.cells[0];
+function place(board,p){
 
-    const offsetX = startX-base[0];
+    for(const c of p.cells){
 
-    const offsetY = startY-base[1];
-
-    for(const cell of piece.cells){
-
-        const x = offsetX+cell[0];
-
-        const y = offsetY+cell[1];
-
-        board[y][x]=value;
+        board[c.y][c.x]=2;
 
     }
 
 }
 
-let currentPage = 1;
+//======================================================
+// 戻す
+//======================================================
 
-const PAGE_SIZE = 10;
+function remove(board,p){
 
-function renderSolutions(list){
+    for(const c of p.cells){
 
-    currentPage = 1;
-
-    window.solutionList = list;
-
-    document.getElementById("resultCount").innerText =
-        list.length + "件";
-
-    drawPage();
-
-}
-
-function drawPage(){
-
-    const area =
-        document.getElementById("resultArea");
-
-    area.innerHTML="";
-
-    const start =
-        (currentPage-1)*PAGE_SIZE;
-
-    const end =
-        Math.min(
-            start+PAGE_SIZE,
-            solutionList.length
-        );
-
-    for(let i=start;i<end;i++){
-
-        area.appendChild(
-            createPatternCard(
-                solutionList[i],
-                i+1
-            )
-        );
+        board[c.y][c.x]=0;
 
     }
 
-    drawPagination();
-
 }
 
-function createPatternCard(solution,no){
+//======================================================
+// バックトラック
+//======================================================
 
-    const card=document.createElement("div");
+function backtrack(board,used){
 
-    card.className="patternCard";
+    const pos=firstEmpty(board);
 
-    const title=document.createElement("div");
+    // 全て埋まった
+    if(pos==null){
 
-    title.className="patternTitle";
+        solutions.push(
 
-    title.innerText="No."+no;
+            buildSolution(used)
 
-    card.appendChild(title);
+        );
 
-    const boardDiv=document.createElement("div");
+        return;
 
-    boardDiv.className="patternBoard";
+    }
 
-    const grid=[];
+    // このマスを含む候補だけ取得
+    const list=placementsAt(
 
-    for(let y=0;y<5;y++){
+        pos.x,
 
-        grid[y]=[];
+        pos.y
 
-        for(let x=0;x<5;x++){
+    );
 
-            grid[y][x]=null;
+    for(const p of list){
+
+        if(!canPlace(board,p)){
+
+            continue;
 
         }
 
+        place(board,p);
+
+        used.push(p);
+
+        backtrack(
+
+            board,
+
+            used
+
+        );
+
+        used.pop();
+
+        remove(board,p);
+
     }
 
-    solution.forEach(piece=>{
+}
 
-        const base=piece.cells[0];
+//======================================================
+// Solution生成
+//======================================================
 
-        const ox=piece.x-base[0];
+function buildSolution(used){
 
-        const oy=piece.y-base[1];
+    let countA=0;
+    let countB=0;
+    let countC=0;
 
-        piece.cells.forEach(cell=>{
+    const usedShapes=[];
 
-            const x=ox+cell[0];
+    const pieces=[];
 
-            const y=oy+cell[1];
+    for(const p of used){
 
-            grid[y][x]=piece.color;
+        if(p.rank=="A")countA++;
+
+        if(p.rank=="B")countB++;
+
+        if(p.rank=="C")countC++;
+
+        usedShapes.push(
+
+            p.shape
+
+        );
+
+        pieces.push({
+
+            shape:p.shape,
+
+            x:p.x,
+
+            y:p.y,
+
+            cells:p.cells.map(c=>({
+
+                x:c.x,
+
+                y:c.y
+
+            }))
 
         });
 
-    });
+    }
 
-    for(let y=0;y<5;y++){
+    return{
 
-        for(let x=0;x<5;x++){
+        index:0,
 
-            const c=document.createElement("div");
+        countA,
 
-            c.className="patternCell";
+        countB,
 
-            if(board[y][x]==1){
+        countC,
 
-                c.style.background="#444";
+        usedShapes,
 
-            }
-            else if(grid[y][x]){
+        pieces
 
-                c.style.background=grid[y][x];
+    };
 
-            }
+}
 
-            boardDiv.appendChild(c);
+//======================================================
+// PlacementMap生成
+//======================================================
+
+let placementMap=[];
+
+function buildPlacementMap(){
+
+    placementMap=[];
+
+    for(let y=0;y<BOARD_SIZE;y++){
+
+        placementMap[y]=[];
+
+        for(let x=0;x<BOARD_SIZE;x++){
+
+            placementMap[y][x]=[];
 
         }
 
     }
 
-    card.appendChild(boardDiv);
+    for(const p of placements){
 
-    return card;
+        for(const c of p.cells){
 
-}
+            placementMap[c.y][c.x].push(
 
-function drawPagination(){
+                p
 
-    let div=document.getElementById("pagination");
+            );
 
-    if(!div){
-
-        div=document.createElement("div");
-
-        div.id="pagination";
-
-        div.className="pagination";
-
-        document.body.appendChild(div);
+        }
 
     }
-
-    div.innerHTML="";
-
-    const pageCount=
-        Math.ceil(
-            solutionList.length/PAGE_SIZE
-        );
-
-    const prev=document.createElement("button");
-
-    prev.className="pageBtn";
-
-    prev.innerText="◀";
-
-    prev.disabled=currentPage===1;
-
-    prev.onclick=()=>{
-
-        currentPage--;
-
-        drawPage();
-
-    };
-
-    div.appendChild(prev);
-
-    for(let i=1;i<=pageCount;i++){
-
-        const b=document.createElement("button");
-
-        b.className="pageBtn";
-
-        if(i===currentPage)
-            b.classList.add("active");
-
-        b.innerText=i;
-
-        b.onclick=()=>{
-
-            currentPage=i;
-
-            drawPage();
-
-        };
-
-        div.appendChild(b);
-
-    }
-
-    const next=document.createElement("button");
-
-    next.className="pageBtn";
-
-    next.innerText="▶";
-
-    next.disabled=currentPage===pageCount;
-
-    next.onclick=()=>{
-
-        currentPage++;
-
-        drawPage();
-
-    };
-
-    div.appendChild(next);
 
 }
