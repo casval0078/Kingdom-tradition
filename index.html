@@ -110,7 +110,7 @@ function solvePuzzle() {
     solutions = [];
     const activeCount = boardState.filter(Boolean).length;
     
-    if (!.includes(activeCount)) {
+    if (![8, 12, 16, 20].includes(activeCount)) {
         alert("置けるマス（白マス）の数を 8, 12, 16, 20マスのいずれかにしてください！");
         return;
     }
