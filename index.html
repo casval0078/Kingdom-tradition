@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>キングダム覇道　伝承最適化ツール</title>
+    <title>キングダム覇道 伝承最適化ツール</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 20px; color: #333; }
         h1 { margin-bottom: 5px; }
@@ -17,6 +17,11 @@
         /* カウンタ表示 */
         .info { margin-bottom: 15px; font-weight: bold; }
         .info span { color: #007bff; }
+        /* フィルター設定エリア */
+        .filter-section { background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
+        .filter-title { font-weight: bold; margin-bottom: 8px; color: #495057; }
+        .filter-options { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .filter-options label { cursor: pointer; display: flex; align-items: center; gap: 4px; }
         /* ボタン */
         button { background: #007bff; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; transition: background 0.2s; margin: 5px; }
         button:hover { background: #0056b3; }
@@ -33,15 +38,26 @@
 <body>
 
 <div class="container">
-    <h1>キングダム覇道　伝承最適化ツール</h1>
+    <h1>キングダム覇道 伝承最適化ツール</h1>
     <div class="description">
-        マスをクリックして「障害物(黒)」を指定します（初期はすべて置ける白マスです）。<br>
-        残った白マスが 8, 12, 16, 20 マスのいずれかになったら「解析開始」を押してください。<br>
+        マスをクリックして「配置不要マス」を指定します（初期はすべて置ける白マスです）<br>
+        残った白マスが 8, 12, 16, 20 マスのいずれかになったら「解析開始」を押してください<br>
+      　※9/29　L型の使用個数対応<br>
     </div>
 
     <div class="info">現在の置けるマス数: <span id="active-count">25</span> / 25</div>
 
     <div class="board" id="main-board"></div>
+
+    <!-- 条件フィルター設定エリア -->
+    <div class="filter-section">
+        <div class="filter-title">L型の使用個数条件:</div>
+        <div class="filter-options">
+            <label><input type="radio" name="l-filter" value="0" checked> 指定なし</label>
+            <label><input type="radio" name="l-filter" value="1"> 1個以上</label>
+            <label><input type="radio" name="l-filter" value="2"> 2個以上</label>
+        </div>
+    </div>
 
     <button id="solve-btn">解析開始</button>
     <button class="secondary" id="reset-btn">リセット</button>
@@ -51,7 +67,6 @@
 
 <script>
 // --- 1. 固定された12種類のブロック定義（回転・反転済みの状態を直接指定） ---
-// ※各ブロックの座標は、必ず一番左上のマスが基準（または0番目）になり、左上詰めで定義されています。
 const FIXED_PIECES = {
     // ■ T型 (4方向)
     'T1': [[0,0], [0,1], [0,2], [1,1]], // 凸
@@ -109,7 +124,6 @@ function solvePuzzle() {
     solutions = [];
     const activeCount = boardState.filter(Boolean).length;
     
-    // 【修正箇所】配列が抜けていた部分を [8, 12, 16, 20] に修正
     if (![8, 12, 16, 20].includes(activeCount)) {
         alert("置けるマス（白マス）の数を 8, 12, 16, 20マスのいずれかにしてください！");
         return;
@@ -171,10 +185,32 @@ function solvePuzzle() {
     }
 
     backtrack();
-    renderResults();
+    filterAndRenderResults();
 }
 
-// --- 4. 隣接ブロックの色被りを防ぐグラフ彩色アルゴリズム ---
+// --- 4. 条件フィルター処理 ---
+function filterAndRenderResults() {
+    const minLCount = parseInt(document.querySelector('input[name="l-filter"]:checked').value, 10);
+
+    const filteredSolutions = solutions.filter(sol => {
+        if (minLCount === 0) return true;
+
+        const lPieceIds = new Set();
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+                const val = sol[r][c];
+                if (val !== 'X' && val.startsWith('L')) {
+                    lPieceIds.add(val);
+                }
+            }
+        }
+        return lPieceIds.size >= minLCount;
+    });
+
+    renderResults(filteredSolutions);
+}
+
+// --- 5. 隣接ブロックの色被りを防ぐグラフ彩色アルゴリズム ---
 function colorSolution(sol) {
     const colorMap = {}; 
     const blockIds = new Set();
@@ -224,23 +260,23 @@ function colorSolution(sol) {
     return colorMap;
 }
 
-// --- 5. 結果の描画表示 ---
-function renderResults() {
+// --- 6. 結果の描画表示 ---
+function renderResults(displaySolutions) {
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = '';
 
     const countDiv = document.createElement('div');
     countDiv.classList.add('solution-count');
-    countDiv.textContent = `解析完了: 合計 ${solutions.length} 件のクリアパターンが見つかりました`;
+    countDiv.textContent = `解析完了: 条件に一致するクリアパターン ${displaySolutions.length} 件 （全 ${solutions.length} 件中）`;
     resultsContainer.appendChild(countDiv);
 
     const gridList = document.createElement('div');
     gridList.classList.add('grid-list');
 
-    const displayLimit = Math.min(solutions.length, 300);
+    const displayLimit = Math.min(displaySolutions.length, 300);
     
     for (let i = 0; i < displayLimit; i++) {
-        const sol = solutions[i];
+        const sol = displaySolutions[i];
         const colorMap = colorSolution(sol);
 
         const miniBoard = document.createElement('div');
@@ -268,12 +304,12 @@ function renderResults() {
 
     resultsContainer.appendChild(gridList);
     
-    if (solutions.length > 300) {
+    if (displaySolutions.length > 300) {
         const moreDiv = document.createElement('div');
         moreDiv.style.textAlign = 'center';
         moreDiv.style.marginTop = '15px';
         moreDiv.style.fontWeight = 'bold';
-        moreDiv.textContent = `...件数が多いため、他 ${solutions.length - 300} 件のパターンは表示を省略しました。`;
+        moreDiv.textContent = `...件数が多いため、他 ${displaySolutions.length - 300} 件のパターンは表示を省略しました。`;
         resultsContainer.appendChild(moreDiv);
     }
 }
@@ -281,9 +317,16 @@ function renderResults() {
 // イベントリスナー
 document.getElementById('solve-btn').addEventListener('click', solvePuzzle);
 document.getElementById('reset-btn').addEventListener('click', () => {
+    // 1. 盤面のリセット
     boardState.fill(true); 
     createBoard();
     updateCount();
+    
+    // 2. フィルター（ラジオボタン）のリセット
+    const defaultRadio = document.querySelector('input[name="l-filter"][value="0"]');
+    if (defaultRadio) defaultRadio.checked = true;
+
+    // 3. 結果表示のクリア
     document.getElementById('results').innerHTML = '';
 });
 
