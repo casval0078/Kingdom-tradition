@@ -40,9 +40,8 @@
 <div class="container">
     <h1>キングダム覇道 伝承最適化ツール</h1>
     <div class="description">
-        マスをクリックして「配置不要マス」を指定します（初期はすべて置ける白マスです）<br>
-        残った白マスが 8, 12, 16, 20 マスのいずれかになったら「解析開始」を押してください<br>
-      　※9/29　Ａ(L型)の使用個数対応<br>
+        マスをクリックして「配置不要マス」を指定します（初期はすべて置ける白マスです）。<br>
+        残った白マスが 8, 12, 16, 20 マスのいずれかになったら「解析開始」を押してください。<br>
     </div>
 
     <div class="info">現在の置けるマス数: <span id="active-count">25</span> / 25</div>
@@ -51,9 +50,10 @@
 
     <!-- 条件フィルター設定エリア -->
     <div class="filter-section">
-        <div class="filter-title">Ａ(L型)の使用個数条件:</div>
+        <div class="filter-title">L型（向き不問）の使用条件:</div>
         <div class="filter-options">
-            <label><input type="radio" name="l-filter" value="0" checked> 指定なし</label>
+            <label><input type="radio" name="l-filter" value="any" checked> 指定なし</label>
+            <label><input type="radio" name="l-filter" value="0"> 0個</label>
             <label><input type="radio" name="l-filter" value="1"> 1個以上</label>
             <label><input type="radio" name="l-filter" value="2"> 2個以上</label>
         </div>
@@ -190,11 +190,14 @@ function solvePuzzle() {
 
 // --- 4. 条件フィルター処理 ---
 function filterAndRenderResults() {
-    const minLCount = parseInt(document.querySelector('input[name="l-filter"]:checked').value, 10);
+    const filterValue = document.querySelector('input[name="l-filter"]:checked').value;
 
     const filteredSolutions = solutions.filter(sol => {
-        if (minLCount === 0) return true;
+        if (filterValue === 'any') return true;
 
+        const targetCount = parseInt(filterValue, 10);
+
+        // 配置されたピースからL型（L1, L2, L3, L4）のユニークなID数をカウント
         const lPieceIds = new Set();
         for (let r = 0; r < 5; r++) {
             for (let c = 0; c < 5; c++) {
@@ -204,7 +207,13 @@ function filterAndRenderResults() {
                 }
             }
         }
-        return lPieceIds.size >= minLCount;
+
+        // 0個指定の場合はぴったり0個、それ以外は「〜個以上」
+        if (targetCount === 0) {
+            return lPieceIds.size === 0;
+        } else {
+            return lPieceIds.size >= targetCount;
+        }
     });
 
     renderResults(filteredSolutions);
@@ -322,8 +331,8 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     createBoard();
     updateCount();
     
-    // 2. フィルター（ラジオボタン）のリセット
-    const defaultRadio = document.querySelector('input[name="l-filter"][value="0"]');
+    // 2. フィルター（ラジオボタン）のリセット（「指定なし」に戻す）
+    const defaultRadio = document.querySelector('input[name="l-filter"][value="any"]');
     if (defaultRadio) defaultRadio.checked = true;
 
     // 3. 結果表示のクリア
